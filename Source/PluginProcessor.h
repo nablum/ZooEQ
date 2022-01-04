@@ -41,9 +41,63 @@ enum ChainPositions
 };
 
 using Coefficients = Filter::CoefficientsPtr;
-static void updateCoefficients(Coefficients& old, const Coefficients& replacements);
+void updateCoefficients(Coefficients& old, const Coefficients& replacements);
 
 Coefficients makePeakFilter(const ChainSettings& chainSettings, double sampleRate);
+
+template<int Index, typename ChainType, typename CoefficientType>
+void update(ChainType& chain, CoefficientType& cutCoefficients)
+{
+    updateCoefficients(chain.template get<Index>().coefficients, cutCoefficients[Index]);
+    chain.template setBypassed<Index>(false);
+}
+
+template<typename ChainType, typename CoefficientType>
+void updateCutFilter(ChainType& chain,
+                     const CoefficientType& coefficients,
+                     const Slope& slope)
+{
+    chain.template setBypassed<0>(true);
+    chain.template setBypassed<1>(true);
+    chain.template setBypassed<2>(true);
+    chain.template setBypassed<3>(true);
+    
+    switch ( slope )
+    {
+        case Slope_48:
+        {
+            update<3>(chain, coefficients);
+        }
+        case Slope_36:
+        {
+            update<2>(chain, coefficients);
+        }
+        case Slope_24:
+        {
+            update<1>(chain, coefficients);
+        }
+        case Slope_12:
+        {
+            update<0>(chain, coefficients);
+        }
+    }
+}
+
+inline auto makeLowCutFilter(const ChainSettings& chainSettings, double sampleRate)
+{
+    return juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
+                                                                                       sampleRate,
+                                                                                       2 *(chainSettings.lowCutSlope + 1));
+    //For the order parameter, it is changing the slope choice (0/1/2/3) in filter order (2/4/6/8)
+}
+
+inline auto makeHighCutFilter(const ChainSettings& chainSettings, double sampleRate)
+{
+    return juce::dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(chainSettings.highCutFreq,
+                                                                                      sampleRate,
+                                                                                      2 *(chainSettings.highCutSlope + 1));
+    //For the order parameter, it is changing the slope choice (0/1/2/3) in filter order (2/4/6/8)
+}
 
 //==============================================================================
 /**
@@ -95,48 +149,8 @@ private:
     MonoChain leftChain, rightChain;
     
     void updatePeakFilter(const ChainSettings& chainSettings);
-
-    template<int Index, typename ChainType, typename CoefficientType>
-    void update(ChainType& chain, CoefficientType& cutCoefficients)
-    {
-        updateCoefficients(chain.template get<Index>().coefficients, cutCoefficients[Index]);
-        chain.template setBypassed<Index>(false);
-    }
-    
-    template<typename ChainType, typename CoefficientType>
-    void updateCutFilter(ChainType& chain,
-                         const CoefficientType& coefficients,
-                         const Slope& slope)
-    {
-        chain.template setBypassed<0>(true);
-        chain.template setBypassed<1>(true);
-        chain.template setBypassed<2>(true);
-        chain.template setBypassed<3>(true);
-        
-        switch ( slope )
-        {
-            case Slope_48:
-            {
-                update<3>(chain, coefficients);
-            }
-            case Slope_36:
-            {
-                update<2>(chain, coefficients);
-            }
-            case Slope_24:
-            {
-                update<1>(chain, coefficients);
-            }
-            case Slope_12:
-            {
-                update<0>(chain, coefficients);
-            }
-        }
-    }
-    
     void updateLowCutFilters(const ChainSettings& chainSettings);
     void updateHighCutFilter(const ChainSettings& chainSettings);
-    
     void updateFilters();
     
     //==============================================================================
