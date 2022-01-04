@@ -164,8 +164,18 @@ void ZooEQAudioProcessorEditor::timerCallback()
     {
         //update the monochain
         auto chainSettings = getChainSettings(audioProcessor.apvts);
+        
+        //Apply PeakCut Filter changes on the white line
         auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
         updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+        
+        //Apply LowCut Filter changes on the white line
+        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
+        
+        //Apply HighCut Filter changes on the white line
+        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
         
         //signal a repaint
         repaint();
