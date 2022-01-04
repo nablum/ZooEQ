@@ -29,11 +29,24 @@ highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlope
         addAndMakeVisible(comp);
     }
     
+    const auto& params = audioProcessor.getParameters();
+    for( auto params : params )
+    {
+        params->addListener(this);
+    }
+    
+    startTimerHz(60);
+    
     setSize (600, 400);
 }
 
 ZooEQAudioProcessorEditor::~ZooEQAudioProcessorEditor()
 {
+    const auto& params = audioProcessor.getParameters();
+    for( auto params : params )
+    {
+        params->removeListener(this);
+    }
 }
 
 //==============================================================================
@@ -149,8 +162,13 @@ void ZooEQAudioProcessorEditor::timerCallback()
 {
     if ( parametersChanged.compareAndSetBool(false, true) )
     {
-        //Update the monochain
-        //Signal a repaint
+        //update the monochain
+        auto chainSettings = getChainSettings(audioProcessor.apvts);
+        auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+        
+        //signal a repaint
+        repaint();
     }
 }
 
