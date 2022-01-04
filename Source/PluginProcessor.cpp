@@ -108,15 +108,9 @@ void ZooEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     rightChain.prepare(spec);
     
     auto chainSettings = getChainSettings(apvts);
-    
-    auto peakCoefficients =
-    juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
-                                                        chainSettings.peakFreq,
-                                                        chainSettings.peakQuality,
-                                                        juce::Decibels::decibelsToGain(chainSettings.peakGainInDecibels));
-    
-    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
-    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
+
+    //Peak Filter
+    updatePeakFilter(chainSettings);
     
     auto cutCoefficients =
     juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
@@ -124,6 +118,7 @@ void ZooEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
                                                                                 2 *(chainSettings.lowCutSlope + 1));
     //For the order parameter, it is changing the slope choice (0/1/2/3) in filter order (2/4/6/8)
     
+    //LowCut Filter
     //Set the LowCut Filter Coeffecients to the left chain
     
     auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
@@ -173,7 +168,7 @@ void ZooEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         }
     }
     
-    //Set the LowCut Filter Coeffecients to the left chain
+    //Set the LowCut Filter Coeffecients to the right chain
             
     auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
     
@@ -270,18 +265,12 @@ void ZooEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    auto chainSettings = getChainSettings(apvts);
+    
     //TEST : Short cut of the PrepareToPlay Function
     
     //Peak Filter
-    auto chainSettings = getChainSettings(apvts);
-    
-    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(),
-                                                                                chainSettings.peakFreq,
-                                                                                chainSettings.peakQuality,
-                                                                                juce::Decibels::decibelsToGain(chainSettings.peakGainInDecibels));
-    
-    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
-    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoefficients;
+    updatePeakFilter(chainSettings);
     
     //LowCut Filter
     auto cutCoefficients =
@@ -339,7 +328,7 @@ void ZooEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         }
     }
     
-    //Set the LowCut Filter Coeffecients to the left chain
+    //Set the LowCut Filter Coeffecients to the right chain
             
     auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
     
@@ -440,6 +429,22 @@ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts)
     settings.highCutSlope = static_cast<Slope>(apvts.getRawParameterValue("HighCut Slope")->load());
     
     return settings;
+}
+
+void ZooEQAudioProcessor::updatePeakFilter(const ChainSettings& chainSettings)
+{
+    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(),
+                                                                                chainSettings.peakFreq,
+                                                                                chainSettings.peakQuality,
+                                                                                juce::Decibels::decibelsToGain(chainSettings.peakGainInDecibels));
+    
+    updateCoefficients(leftChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+    updateCoefficients(rightChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+}
+
+void ZooEQAudioProcessor::updateCoefficients(Coefficients &old, const Coefficients &replacements)
+{
+    *old = *replacements;
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout
