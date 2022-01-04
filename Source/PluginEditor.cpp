@@ -9,26 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-//==============================================================================
-ZooEQAudioProcessorEditor::ZooEQAudioProcessorEditor (ZooEQAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p),
-peakFreqSliderAttachment(audioProcessor.apvts, "Peak Freq", peakFreqSlider),
-peakGainSliderAttachment(audioProcessor.apvts, "Peak Gain", peakGainSlider),
-peakQualitySliderAttachment(audioProcessor.apvts, "Peak Quality", peakQualitySlider),
-lowCutFreqSliderAttachment(audioProcessor.apvts, "LowCut Freq", lowCutFreqSlider),
-highCutFreqSliderAttachment(audioProcessor.apvts, "HighCut Freq", highCutFreqSlider),
-lowCutSlopeSliderAttachment(audioProcessor.apvts, "LowCut Slope", lowCutSlopeSlider),
-highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlopeSlider)
+ResponseCurveComponent::ResponseCurveComponent(ZooEQAudioProcessor& p) : audioProcessor(p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    
-    //Set the custom rotary slider 
-    for( auto* comp : getComps() )
-    {
-        addAndMakeVisible(comp);
-    }
-    
     const auto& params = audioProcessor.getParameters();
     for( auto params : params )
     {
@@ -36,11 +18,9 @@ highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlope
     }
     
     startTimerHz(60);
-    
-    setSize (600, 400);
 }
 
-ZooEQAudioProcessorEditor::~ZooEQAudioProcessorEditor()
+ResponseCurveComponent::~ResponseCurveComponent()
 {
     const auto& params = audioProcessor.getParameters();
     for( auto params : params )
@@ -49,8 +29,36 @@ ZooEQAudioProcessorEditor::~ZooEQAudioProcessorEditor()
     }
 }
 
-//==============================================================================
-void ZooEQAudioProcessorEditor::paint (juce::Graphics& g)
+void ResponseCurveComponent::parameterValueChanged(int parameterIndex, float newValue)
+{
+    parametersChanged.set(true);
+}
+
+void ResponseCurveComponent::timerCallback()
+{
+    if ( parametersChanged.compareAndSetBool(false, true) )
+    {
+        //update the monochain
+        auto chainSettings = getChainSettings(audioProcessor.apvts);
+        
+        //Apply PeakCut Filter changes on the white line
+        auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+        
+        //Apply LowCut Filter changes on the white line
+        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
+        
+        //Apply HighCut Filter changes on the white line
+        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
+        
+        //signal a repaint
+        repaint();
+    }
+}
+
+void ResponseCurveComponent::paint (juce::Graphics& g)
 {
     using namespace juce;
     // (Our component is opaque, so we must completely fill the background with a solid colour)
@@ -61,8 +69,7 @@ void ZooEQAudioProcessorEditor::paint (juce::Graphics& g)
     
     g.fillAll (Colours::black);
     
-    auto bounds = getLocalBounds();
-    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.33);
+    auto responseArea = getLocalBounds();
     
     auto w = responseArea.getWidth();
     
@@ -130,6 +137,49 @@ void ZooEQAudioProcessorEditor::paint (juce::Graphics& g)
     
 }
 
+//==============================================================================
+ZooEQAudioProcessorEditor::ZooEQAudioProcessorEditor (ZooEQAudioProcessor& p)
+    : AudioProcessorEditor (&p), audioProcessor (p),
+responseCurveComponent(audioProcessor),
+peakFreqSliderAttachment(audioProcessor.apvts, "Peak Freq", peakFreqSlider),
+peakGainSliderAttachment(audioProcessor.apvts, "Peak Gain", peakGainSlider),
+peakQualitySliderAttachment(audioProcessor.apvts, "Peak Quality", peakQualitySlider),
+lowCutFreqSliderAttachment(audioProcessor.apvts, "LowCut Freq", lowCutFreqSlider),
+highCutFreqSliderAttachment(audioProcessor.apvts, "HighCut Freq", highCutFreqSlider),
+lowCutSlopeSliderAttachment(audioProcessor.apvts, "LowCut Slope", lowCutSlopeSlider),
+highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlopeSlider)
+{
+    // Make sure that before the constructor has finished, you've set the
+    // editor's size to whatever you need it to be.
+    
+    //Set the custom rotary slider 
+    for( auto* comp : getComps() )
+    {
+        addAndMakeVisible(comp);
+    }
+    
+    setSize (600, 400);
+}
+
+ZooEQAudioProcessorEditor::~ZooEQAudioProcessorEditor()
+{
+
+}
+
+//==============================================================================
+void ZooEQAudioProcessorEditor::paint (juce::Graphics& g)
+{
+    using namespace juce;
+    // (Our component is opaque, so we must completely fill the background with a solid colour)
+//    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+//    g.setColour (juce::Colours::white);
+//    g.setFont (15.0f);
+//    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
+    
+    g.fillAll (Colours::black);
+    
+}
+
 void ZooEQAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
@@ -138,6 +188,8 @@ void ZooEQAudioProcessorEditor::resized()
     //Organisation of the display : Placement of the elements
     auto bounds = getLocalBounds();
     auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.33);
+    
+    responseCurveComponent.setBounds(responseArea);
     
     auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.33);
     auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.5);
@@ -153,35 +205,6 @@ void ZooEQAudioProcessorEditor::resized()
     peakQualitySlider.setBounds(bounds);
 }
 
-void ZooEQAudioProcessorEditor::parameterValueChanged(int parameterIndex, float newValue)
-{
-    parametersChanged.set(true);
-}
-
-void ZooEQAudioProcessorEditor::timerCallback()
-{
-    if ( parametersChanged.compareAndSetBool(false, true) )
-    {
-        //update the monochain
-        auto chainSettings = getChainSettings(audioProcessor.apvts);
-        
-        //Apply PeakCut Filter changes on the white line
-        auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
-        updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
-        
-        //Apply LowCut Filter changes on the white line
-        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
-        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
-        
-        //Apply HighCut Filter changes on the white line
-        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
-        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
-        
-        //signal a repaint
-        repaint();
-    }
-}
-
 std::vector<juce::Component*> ZooEQAudioProcessorEditor::getComps()
 {
     return
@@ -192,5 +215,6 @@ std::vector<juce::Component*> ZooEQAudioProcessorEditor::getComps()
         &highCutFreqSlider,
         &lowCutSlopeSlider,
         &highCutSlopeSlider,
+        &responseCurveComponent
     };
 }
