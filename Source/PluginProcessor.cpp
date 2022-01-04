@@ -107,25 +107,8 @@ void ZooEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     leftChain.prepare(spec);
     rightChain.prepare(spec);
     
-    auto chainSettings = getChainSettings(apvts);
-
-    // === Peak Filter === //
-    updatePeakFilter(chainSettings);
-    
-    // === LowCut Filter === //
-    auto cutCoefficients =
-    juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
-                                                                                sampleRate,
-                                                                                2 *(chainSettings.lowCutSlope + 1));
-    //For the order parameter, it is changing the slope choice (0/1/2/3) in filter order (2/4/6/8)
-    
-    //Set the LowCut Filter Coeffecients to the left chain
-    auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
-    updateCutFilter(leftLowCut, cutCoefficients, chainSettings.lowCutSlope);
-    
-    //Set the LowCut Filter Coeffecients to the right chain
-    auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
-    updateCutFilter(rightLowCut, cutCoefficients, chainSettings.lowCutSlope);
+    // === Filter Processing === //
+    updateFilters();
     
 }
 
@@ -176,28 +159,8 @@ void ZooEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    auto chainSettings = getChainSettings(apvts);
-    
-    //TEST : Short cut of the PrepareToPlay Function
-    
-    // === Peak Filter === //
-    updatePeakFilter(chainSettings);
-    
-    // === LowCut Filter === //
-    auto cutCoefficients =
-    juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
-                                                                                getSampleRate(),
-                                                                                2 *(chainSettings.lowCutSlope + 1));
-    //For the order parameter, it is changing the slope choice (0/1/2/3) in filter order (2/4/6/8)
-
-    //Set the LowCut Filter Coeffecients to the left chain
-    auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
-    updateCutFilter(leftLowCut, cutCoefficients, chainSettings.lowCutSlope);
-    
-    //Set the LowCut Filter Coeffecients to the right chain
-    auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
-    updateCutFilter(rightLowCut, cutCoefficients, chainSettings.lowCutSlope);
-
+    // === Filter Processing === //
+    updateFilters();
     
     // === Apply FX on the audio === //
     juce::dsp::AudioBlock<float> block(buffer);
@@ -267,6 +230,50 @@ void ZooEQAudioProcessor::updatePeakFilter(const ChainSettings& chainSettings)
 void ZooEQAudioProcessor::updateCoefficients(Coefficients &old, const Coefficients &replacements)
 {
     *old = *replacements;
+}
+
+void ZooEQAudioProcessor::updateLowCutFilters(const ChainSettings &chainSettings)
+{
+    //Definition of the low cut filter coefficients
+    auto lowCutCoefficients =
+    juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
+                                                                                getSampleRate(),
+                                                                                2 *(chainSettings.lowCutSlope + 1));
+    //For the order parameter, it is changing the slope choice (0/1/2/3) in filter order (2/4/6/8)
+    
+    //Set the LowCut Filter Coeffecients to the left chain
+    auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
+    updateCutFilter(leftLowCut, lowCutCoefficients, chainSettings.lowCutSlope);
+    
+    //Set the LowCut Filter Coeffecients to the right chain
+    auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
+    updateCutFilter(rightLowCut, lowCutCoefficients, chainSettings.lowCutSlope);
+}
+
+void ZooEQAudioProcessor::updateHighCutFilter(const ChainSettings &chainSettings)
+{
+    //Definition of the high cut filter coefficients
+    auto highCutCoefficients =
+    juce::dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(chainSettings.highCutFreq,
+                                                                               getSampleRate(),
+                                                                               2 *(chainSettings.highCutSlope + 1));
+    //For the order parameter, it is changing the slope choice (0/1/2/3) in filter order (2/4/6/8)
+    
+    //Set the HighCut Filter Coeffecients to the left chain
+    auto& leftHighCut = leftChain.get<ChainPositions::HighCut>();
+    updateCutFilter(leftHighCut, highCutCoefficients, chainSettings.highCutSlope);
+    
+    //Set the HighCut Filter Coeffecients to the right chain
+    auto& rightHighCut = rightChain.get<ChainPositions::HighCut>();
+    updateCutFilter(rightHighCut, highCutCoefficients, chainSettings.highCutSlope);
+}
+
+void ZooEQAudioProcessor::updateFilters()
+{
+    auto chainSettigns = getChainSettings(apvts);
+    updateLowCutFilters(chainSettigns);
+    updatePeakFilter(chainSettigns);
+    updateHighCutFilter(chainSettigns);
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout
