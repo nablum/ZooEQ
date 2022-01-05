@@ -106,10 +106,10 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
     auto backgroundTextColor = Colours::transparentWhite;
     auto outlineTextColor = Colours::transparentWhite;
     auto textColor = Colours::black;
+    //Font Size
+    g.setFont(getTextHeight()-1);
     
     Rectangle<float> r;
-    
-    g.setFont(getTextHeight());
     auto text = getDisplayString();
     auto strWidth = g.getCurrentFont().getStringWidth(text);
     
@@ -447,9 +447,12 @@ void ZooEQAudioProcessorEditor::resized()
     
     //Organisation of the display : Placement of the elements
     auto bounds = getLocalBounds();
-    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.33);
+    float hRatio = 32.f / 100.f;// JUCE_LIVE_CONSTANT(33) / 100.f;
+    auto responseArea = bounds.removeFromTop(bounds.getHeight() * hRatio);
     
     responseCurveComponent.setBounds(responseArea);
+    
+    bounds.removeFromTop(5); //Create a gap between response curve and sliders
     
     auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.33);
     auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.5);
