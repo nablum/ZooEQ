@@ -95,11 +95,11 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
     auto range = getRange();
     auto sliderBounds = getSliderBounds();
     
-    //Rotary Slider areas bounds -> To see the positions
-    g.setColour(Colours::red);
-    g.drawRect(getLocalBounds());
-    g.setColour(Colours::yellow);
-    g.drawRect(sliderBounds);
+    //Rotary Slider areas debug
+//    g.setColour(Colours::red);
+//    g.drawRect(getLocalBounds());
+//    g.setColour(Colours::yellow);
+//    g.drawRect(sliderBounds);
     
     // === Slider Value === //
     //Colors
@@ -158,7 +158,42 @@ juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const
 
 juce::String RotarySliderWithLabels::getDisplayString() const
 {
-    return juce::String(getValue());
+    //This function refoactred the way that the values are display
+    
+    if( auto* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(param) )
+        return choiceParam->getCurrentChoiceName();
+    
+    juce::String str;
+    bool addK = false;
+    
+    //Refactor the value if it's over 999Hz to 1kHz
+    if (auto* floatParam = dynamic_cast<juce::AudioParameterFloat*>(param))
+    {
+        float val = getValue();
+        if (val > 999.f)
+        {
+            val /= 1000.f; //1001 / 1000 = 1.001
+            addK = true;
+        }
+        str = juce::String(val, (addK ? 2 : 0)); //1001 / 1000 = 1.00
+    }
+    else
+    {
+        jassertfalse;  //This shouldn't happen!
+    }
+    
+    //Add kHz if necessary
+    if (suffix.isNotEmpty())
+    {
+        str << " ";
+        if(addK)
+            str << "k";
+        
+        str << suffix;
+    }
+    
+    return str;
+    
 }
 //==============================================================================
 ResponseCurveComponent::ResponseCurveComponent(ZooEQAudioProcessor& p) : audioProcessor(p)
