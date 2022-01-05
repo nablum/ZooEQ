@@ -139,6 +139,37 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
                                       endAng,
                                       *this);
     
+    // === Slider Labels === //
+    auto center = sliderBounds.toFloat().getCentre();
+    auto radius = sliderBounds.getWidth() * 0.5f;
+    
+    g.setColour(Colours::orange); //Label color
+    g.setFont(getTextHeight());
+    
+    auto numChoices = labels.size();
+    for ( int i = 0; i < numChoices; ++i)
+    {
+        auto pos = labels[i].pos;
+        
+        jassert(0.f <= pos);
+        jassert(pos <= 1.f);
+        
+        auto ang = jmap(pos, 0.f, 1.f, startAng, endAng);
+        
+        auto c = center.getPointOnCircumference(radius + getTextHeight() * 0.5f + 1, ang);
+        //Get away from the center of the slider at the right angle
+        
+        Rectangle<float> r;
+        
+        auto str = labels[i].label;
+        r.setSize(g.getCurrentFont().getStringWidth(str), getTextHeight()); //Move a little bit from the slider bound
+        
+        r.setCentre(c);
+        r.setY(r.getY() + getTextHeight());
+        
+        g.drawFittedText(str, r.toNearestInt(), juce::Justification::centred, 1);
+    }
+    
 }
 
 juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const
@@ -354,6 +385,9 @@ highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlope
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
+    
+    peakFreqSlider.labels.add({0.f, "20Hz"});
+    peakFreqSlider.labels.add({1.f, "20kHz"});
     
     //Set the custom rotary slider 
     for( auto* comp : getComps() )
