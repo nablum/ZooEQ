@@ -24,69 +24,111 @@ void LookAndFeel::drawRotarySlider(juce::Graphics & g,
     auto bounds = Rectangle<float>(x, y, width, height);
     
     //Color Set up
-    auto purple = Colour(97u, 18u, 167u);
-    auto grey = Colour(30u, 50u, 58u);
-    auto orange = Colour(255u, 154u, 1u);
-    auto blue = Colour(0u, 165u, 206u);
+    auto outlineRotarySliderColor = Colour(43u, 36u, 48u);
+    auto rotarySliderColorGradient1 = Colours::lightslategrey;
+    auto rotarySliderColorGradient2 = Colours::slategrey;
+    auto sliderColor = Colours::lightgoldenrodyellow;
+//    auto backgroundTextColor = Colours::transparentBlack;
+//    auto textColor = Colours::white;
     
-// === Rotary Slider === //
+    // === Rotary Slider === //
     
     //Fill
-    g.setColour(purple); //Color inside the rotary slider
+    //g.setColour(Colours::dimgrey); //Color inside the rotary slider
+    auto rotarySliderColorGradient = ColourGradient().vertical(rotarySliderColorGradient1, rotarySliderColorGradient2, bounds);
+    g.setGradientFill(rotarySliderColorGradient);
     g.fillEllipse(bounds);
     
     //Draw
-    g.setColour(orange); //Color around the rotary slider
-    g.drawEllipse(bounds, 1.f);
+    g.setColour(outlineRotarySliderColor); //Color around the rotary slider
+    g.drawEllipse(bounds, 1.5f);
     
-// === Slider === //
+    if ( auto* rswl = dynamic_cast<RotarySliderWithLabels*>(&slider) )
+    {
+        // === Slider === //
+        g.setColour(sliderColor); //Set the color
+        
+        //Set up
+        auto center = bounds.getCentre();
+        Path p;
+        Rectangle<float> r;
+        
+        //Set Slider Position & size
+        r.setLeft(center.getX() - 2);
+        r.setRight(center.getX() + 2);
+        r.setTop(bounds.getY());
+        //r.setBottom(center.getY() - rswl->getTextHeight() * 1.5); //With Slider Value in the middle
+        r.setBottom(center.getY());
+        p.addRoundedRectangle(r, 2.f);
+        
+        //Rotation
+        jassert(rotaryStartAngle < rotaryEndAngle);
+        auto sliderAngRad = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle);  //Normalized angle values
+        p.applyTransform(AffineTransform().rotation(sliderAngRad, center.getX(), center.getY())); //Rotation transformation
+        g.fillPath(p); //Fill the graphics
+        
+        // === Slider Actual Value === //
+//        g.setFont(rswl->getTextHeight());
+//        auto text = rswl->getDisplayString();
+//        auto strWidth = g.getCurrentFont().getStringWidth(text);
+//
+//        r.setSize(strWidth + 4, rswl->getTextHeight() + 2);
+//        r.setCentre(bounds.getCentre());
+//
+//        //Draw text background
+//        g.setColour(backgroundTextColor); //Backgound text color -> Set to transparent for white text
+//        g.fillRect(r);
+//
+//        //Draw Text
+//        g.setColour(textColor); //Text color
+//        g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, 1);
+        
+    }
     
-    //Set the color
-    g.setColour(blue);
-    
-    //Set up
-    auto center = bounds.getCentre();
-    Path p;
-    Rectangle<float> r;
-    
-    //Set Position
-    r.setLeft(center.getX() - 2);
-    r.setRight(center.getX() + 2);
-    r.setTop(bounds.getY());
-    r.setBottom(center.getY());
-    
-    //Add to the Path
-    p.addRectangle(r);
-    
-    //Check if rotary start angle is less than rotary end angle -> Return error if it is the case
-    jassert(rotaryStartAngle < rotaryEndAngle);
-    
-    //Normalized angle values
-    auto sliderAngRad = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle);
-    
-    //Apply the rotation
-    p.applyTransform(AffineTransform().rotation(sliderAngRad, center.getX(), center.getY()));
-    
-    //Fill the graphics
-    g.fillPath(p);
 }
 //==============================================================================
 void RotarySliderWithLabels::paint(juce::Graphics &g)
 {
     using namespace juce;
-    
     auto startAng = degreesToRadians(180.f + 45.f);
     auto endAng = degreesToRadians(180.f - 45.f) + MathConstants<float>::twoPi;
-    
     auto range = getRange();
-    
     auto sliderBounds = getSliderBounds();
     
+    //Rotary Slider areas bounds -> To see the positions
     g.setColour(Colours::red);
     g.drawRect(getLocalBounds());
     g.setColour(Colours::yellow);
     g.drawRect(sliderBounds);
     
+    // === Slider Value === //
+    //Colors
+    auto backgroundTextColor = Colours::transparentWhite;
+    auto outlineTextColor = Colours::transparentWhite;
+    auto textColor = Colours::black;
+    
+    Rectangle<float> r;
+    
+    g.setFont(getTextHeight());
+    auto text = getDisplayString();
+    auto strWidth = g.getCurrentFont().getStringWidth(text);
+    
+    r.setSize(strWidth + 4, getTextHeight() + 2);
+    r.setCentre(getLocalBounds().getCentreX(), getLocalBounds().getBottom()-10); //Slider value position
+    
+    //Draw rectangle background
+    g.setColour(backgroundTextColor); //Backgound text color -> Set to transparent for white text
+    g.fillRect(r);
+    
+    //Draw the background outline
+    g.setColour(outlineTextColor);
+    g.drawRect(r);
+    
+    //Draw Text
+    g.setColour(textColor); //Text color
+    g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, 1);
+    
+    // === Rotary Slider === //
     getLookAndFeel().drawRotarySlider(g,
                                       sliderBounds.getX(),
                                       sliderBounds.getY(),
@@ -114,6 +156,10 @@ juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const
     return r;
 }
 
+juce::String RotarySliderWithLabels::getDisplayString() const
+{
+    return juce::String(getValue());
+}
 //==============================================================================
 ResponseCurveComponent::ResponseCurveComponent(ZooEQAudioProcessor& p) : audioProcessor(p)
 {
@@ -168,7 +214,17 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
 {
     using namespace juce;
     
-    g.fillAll (Colours::black);
+    //Colors
+    auto responseCurveColor = Colours::white;
+    auto backgroundOutlineColor = Colour(43u, 36u, 48u);
+    auto backgroundColor = Colour(140u, 200u, 190u);
+    
+    //Display parameters
+    float cornerSizeDisplay = 4.f;
+    float lineThicknessDisplay = 3.f;
+    float strokeThickness = 2.f;
+    
+    g.fillAll (backgroundColor); //Curve Background Color
     
     auto responseArea = getLocalBounds();
     
@@ -229,11 +285,11 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
         responseCurve.lineTo(responseArea.getX() + i, map(mags[i]));
     }
     
-    g.setColour(Colours::orange);
-    g.drawRoundedRectangle(responseArea.toFloat(), 4.f, 1.f);
-    
-    g.setColour(Colours::white);
-    g.strokePath(responseCurve, PathStrokeType(2.f));
+    g.setColour(backgroundOutlineColor);
+    g.drawRoundedRectangle(responseArea.toFloat(), cornerSizeDisplay, lineThicknessDisplay);
+ 
+    g.setColour(responseCurveColor);
+    g.strokePath(responseCurve, PathStrokeType(strokeThickness));
     
     
 }
@@ -282,13 +338,14 @@ ZooEQAudioProcessorEditor::~ZooEQAudioProcessorEditor()
 void ZooEQAudioProcessorEditor::paint (juce::Graphics& g)
 {
     using namespace juce;
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-//    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-//    g.setColour (juce::Colours::white);
-//    g.setFont (15.0f);
-//    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
     
-    g.fillAll (Colours::black);
+    auto Color1 = Colours::white;
+    auto Color2 = Colour(190u, 190u, 190u);
+    
+    auto backgroundColorGradient = ColourGradient().vertical(Color1, Color2, getLocalBounds());
+    
+    g.setGradientFill(backgroundColorGradient);
+    g.fillAll();
     
 }
 
