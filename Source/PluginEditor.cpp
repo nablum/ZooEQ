@@ -61,11 +61,6 @@ void ResponseCurveComponent::timerCallback()
 void ResponseCurveComponent::paint (juce::Graphics& g)
 {
     using namespace juce;
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-//    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-//    g.setColour (juce::Colours::white);
-//    g.setFont (15.0f);
-//    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
     
     g.fillAll (Colours::black);
     
@@ -138,9 +133,20 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
 }
 
 //==============================================================================
-ZooEQAudioProcessorEditor::ZooEQAudioProcessorEditor (ZooEQAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p),
+ZooEQAudioProcessorEditor::ZooEQAudioProcessorEditor (ZooEQAudioProcessor& p):
+AudioProcessorEditor (&p),
+audioProcessor (p),
+
+peakFreqSlider(*audioProcessor.apvts.getParameter("Peak Freq"), "Hz"),
+peakGainSlider(*audioProcessor.apvts.getParameter("Peak Gain"), "dB"),
+peakQualitySlider(*audioProcessor.apvts.getParameter("Peak Quality"), ""),
+lowCutFreqSlider(*audioProcessor.apvts.getParameter("LowCut Freq"), "Hz"),
+highCutFreqSlider(*audioProcessor.apvts.getParameter("HighCut Freq"), "Hz"),
+lowCutSlopeSlider(*audioProcessor.apvts.getParameter("LowCut Slope"), "dB/Oct"),
+highCutSlopeSlider(*audioProcessor.apvts.getParameter("HighCut Slope"), "dB/Oct"),
+
 responseCurveComponent(audioProcessor),
+
 peakFreqSliderAttachment(audioProcessor.apvts, "Peak Freq", peakFreqSlider),
 peakGainSliderAttachment(audioProcessor.apvts, "Peak Gain", peakGainSlider),
 peakQualitySliderAttachment(audioProcessor.apvts, "Peak Quality", peakQualitySlider),
