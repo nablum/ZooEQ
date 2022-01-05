@@ -140,11 +140,14 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
                                       *this);
     
     // === Slider Labels === //
+    //Set up
+    auto labelColor = Colours::dimgrey; //Color of the slider labels
+    g.setFont(getTextHeight()-2); //Set the font size
+    
     auto center = sliderBounds.toFloat().getCentre();
     auto radius = sliderBounds.getWidth() * 0.5f;
     
-    g.setColour(Colours::orange); //Label color
-    g.setFont(getTextHeight());
+    g.setColour(labelColor); //Label color
     
     auto numChoices = labels.size();
     for ( int i = 0; i < numChoices; ++i)
@@ -154,9 +157,9 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
         jassert(0.f <= pos);
         jassert(pos <= 1.f);
         
-        auto ang = jmap(pos, 0.f, 1.f, startAng, endAng);
+        auto ang = jmap(pos, 0.f, 1.f, startAng + degreesToRadians(18.f), endAng - degreesToRadians(18.f));
         
-        auto c = center.getPointOnCircumference(radius + getTextHeight() * 0.5f + 1, ang);
+        auto c = center.getPointOnCircumference(radius + getTextHeight() * 1.0f + 1, ang);
         //Get away from the center of the slider at the right angle
         
         Rectangle<float> r;
@@ -388,6 +391,25 @@ highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlope
     
     peakFreqSlider.labels.add({0.f, "20Hz"});
     peakFreqSlider.labels.add({1.f, "20kHz"});
+    
+    peakGainSlider.labels.add({0.f, "-24dB"});
+    peakGainSlider.labels.add({1.f, "+24dB"});
+    
+    peakQualitySlider.labels.add({0.f, "0.1"});
+    peakQualitySlider.labels.add({1.f, "10"});
+    
+    lowCutFreqSlider.labels.add({0.f, "20Hz"});
+    lowCutFreqSlider.labels.add({1.f, "20kHz"});
+    
+    lowCutSlopeSlider.labels.add({0.f, "12"});
+    lowCutSlopeSlider.labels.add({1.f, "48"});
+    
+    highCutFreqSlider.labels.add({0.f, "20Hz"});
+    highCutFreqSlider.labels.add({1.f, "20kHz"});
+    
+    highCutSlopeSlider.labels.add({0.f, "12"});
+    highCutSlopeSlider.labels.add({1.f, "48"});
+    
     
     //Set the custom rotary slider 
     for( auto* comp : getComps() )
