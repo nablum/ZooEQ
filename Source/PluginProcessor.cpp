@@ -110,6 +110,10 @@ void ZooEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     // === Filter Processing === //
     updateFilters();
     
+    // === Fifo process === //
+    leftChannelFifo.prepare(samplesPerBlock);
+    rightChannelFifo.prepare(samplesPerBlock);
+    
 }
 
 void ZooEQAudioProcessor::releaseResources()
@@ -173,6 +177,9 @@ void ZooEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     
     leftChain.process(leftContext);
     rightChain.process(rightContext);
+    
+    leftChannelFifo.update(buffer);
+    rightChannelFifo.update(buffer);
 }
 
 //==============================================================================
