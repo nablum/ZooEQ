@@ -384,6 +384,7 @@ void ResponseCurveComponent::resized()
     //Colours
     auto freqLineColour = Colours::white;
     auto gainLineColour = Colours::lightslategrey;
+    auto gain0dBLineColour = Colours::red;
     
     // === Draw curve component vertical lines (Freq) === //
     
@@ -397,17 +398,30 @@ void ResponseCurveComponent::resized()
         20000
     };
     
+    auto renderArea = getAnalysisArea();
+    auto left = renderArea.getX();
+    auto right = renderArea.getRight();
+    auto top = renderArea.getY();
+    auto bottom = renderArea.getBottom();
+    auto width = renderArea.getWidth();
+    
+    Array<float> xs;
     for (auto f : freqs)
     {
         auto normX = mapFromLog10(f, 20.f, 20000.f); //map the freqs in log10 base
+        xs.add(left + width * normX);
+        
+    }
+    
+    for (auto x : xs)
+    {
+//        auto normX = mapFromLog10(f, 20.f, 20000.f); //map the freqs in log10 base
 //        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
-        //Draw vertical lines of ONE pixel in log10 from the top(0.f) to the bottom(getHeight)
+//        Draw vertical lines of ONE pixel in log10 from the top(0.f) to the bottom(getHeight)
+        g.drawVerticalLine(x, top, bottom);
     }
     
     // === Draw curve component horizontal lines (Gain) === //
-    
-    g.setColour(gainLineColour); //Set colour of the horizontal lines
-    
     Array<float> gain
     {
         -24,-12,0,12,24
@@ -415,11 +429,13 @@ void ResponseCurveComponent::resized()
     
     for (auto gdB : gain)
     {
-        auto normY = jmap(gdB, -24.f, 24.f, float(getHeight()), 0.f); //Map the -24dB to the bottom and +24dB to the top
-//        g.drawHorizontalLine(normY, 0.f, getWidth()); //Draw horizontal line from the left(0.f) to the right(getWidth)
+        auto y = jmap(gdB, -24.f, 24.f, float(bottom), float(top)); //Map the -24dB to the bottom and +24dB to the top
+//        g.drawHorizontalLine(y, 0.f, getWidth()); //Draw horizontal line from the left(0.f) to the right(getWidth)
+        g.setColour(gdB == 0.f ? gain0dBLineColour : gainLineColour); //Set the horizontal line colours
+        g.drawHorizontalLine(y, left, right);
     }
     
-    g.drawRect(getAnalysisArea());
+//    g.drawRect(getAnalysisArea());
     
 }
 
