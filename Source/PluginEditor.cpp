@@ -305,7 +305,9 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
     g.drawImage(background, getLocalBounds().toFloat()); //Draw the freq&dB lines
     //(for setup go to ResponseCurveComponent::paint resized())
     
-    auto responseArea = getLocalBounds();
+//    auto responseArea = getLocalBounds();
+//    auto responseArea = getRenderArea();
+    auto responseArea = getAnalysisArea();
     
     auto w = responseArea.getWidth();
     
@@ -365,7 +367,7 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
     }
     
     g.setColour(backgroundOutlineColor);
-    g.drawRoundedRectangle(responseArea.toFloat(), cornerSizeDisplay, lineThicknessDisplay);
+    g.drawRoundedRectangle(getRenderArea().toFloat(), cornerSizeDisplay, lineThicknessDisplay);
  
     g.setColour(responseCurveColor);
     g.strokePath(responseCurve, PathStrokeType(strokeThickness));
@@ -398,7 +400,7 @@ void ResponseCurveComponent::resized()
     for (auto f : freqs)
     {
         auto normX = mapFromLog10(f, 20.f, 20000.f); //map the freqs in log10 base
-        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
+//        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
         //Draw vertical lines of ONE pixel in log10 from the top(0.f) to the bottom(getHeight)
     }
     
@@ -414,9 +416,41 @@ void ResponseCurveComponent::resized()
     for (auto gdB : gain)
     {
         auto normY = jmap(gdB, -24.f, 24.f, float(getHeight()), 0.f); //Map the -24dB to the bottom and +24dB to the top
-        g.drawHorizontalLine(normY, 0.f, getWidth()); //Draw horizontal line from the left(0.f) to the right(getWidth)
+//        g.drawHorizontalLine(normY, 0.f, getWidth()); //Draw horizontal line from the left(0.f) to the right(getWidth)
     }
     
+    g.drawRect(getAnalysisArea());
+    
+}
+
+juce::Rectangle<int> ResponseCurveComponent::getRenderArea()
+{
+    auto bounds = getLocalBounds();
+    
+//    bounds.reduce(10, //JUCE_LIVE_CONSTANT(5),
+//                  8 //JUCE_LIVE_CONSTANT(5)
+//                  );
+
+    //Resized the curve reponse component
+    bounds.removeFromTop(12);
+    bounds.removeFromBottom(2);
+    bounds.removeFromLeft(20);
+    bounds.removeFromRight(20);
+    
+    return bounds;
+    
+}
+
+juce::Rectangle<int> ResponseCurveComponent::getAnalysisArea()
+{
+    auto bounds = getRenderArea();
+    
+    //Define the Analysis Area (where the Freq/Gain values are display
+    //Make a gape to avoid colision between text and response curve bounds
+    bounds.removeFromTop(4);
+    bounds.removeFromBottom(4);
+    
+    return bounds;
 }
 
 //==============================================================================
