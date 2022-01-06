@@ -28,13 +28,10 @@ void LookAndFeel::drawRotarySlider(juce::Graphics & g,
     auto rotarySliderColorGradient1 = Colours::lightslategrey;
     auto rotarySliderColorGradient2 = Colours::slategrey;
     auto sliderColor = Colours::lightgoldenrodyellow;
-//    auto backgroundTextColor = Colours::transparentBlack;
-//    auto textColor = Colours::white;
     
     // === Rotary Slider === //
     
     //Fill
-    //g.setColour(Colours::dimgrey); //Color inside the rotary slider
     auto rotarySliderColorGradient = ColourGradient().vertical(rotarySliderColorGradient1, rotarySliderColorGradient2, bounds);
     g.setGradientFill(rotarySliderColorGradient);
     g.fillEllipse(bounds);
@@ -66,22 +63,6 @@ void LookAndFeel::drawRotarySlider(juce::Graphics & g,
         auto sliderAngRad = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle);  //Normalized angle values
         p.applyTransform(AffineTransform().rotation(sliderAngRad, center.getX(), center.getY())); //Rotation transformation
         g.fillPath(p); //Fill the graphics
-        
-        // === Slider Actual Value === //
-//        g.setFont(rswl->getTextHeight());
-//        auto text = rswl->getDisplayString();
-//        auto strWidth = g.getCurrentFont().getStringWidth(text);
-//
-//        r.setSize(strWidth + 4, rswl->getTextHeight() + 2);
-//        r.setCentre(bounds.getCentre());
-//
-//        //Draw text background
-//        g.setColour(backgroundTextColor); //Backgound text color -> Set to transparent for white text
-//        g.fillRect(r);
-//
-//        //Draw Text
-//        g.setColour(textColor); //Text color
-//        g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, 1);
         
     }
     
@@ -300,13 +281,13 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
     float lineThicknessDisplay = 3.f;
     float strokeThickness = 2.f;
     
-    g.fillAll (backgroundColor); //Curve Background Color
+    //Draw the background render area
+    g.setColour(backgroundColor);
+    g.fillRect(getRenderArea());
     
     g.drawImage(background, getLocalBounds().toFloat()); //Draw the freq&dB lines
     //(for setup go to ResponseCurveComponent::paint resized())
     
-//    auto responseArea = getLocalBounds();
-//    auto responseArea = getRenderArea();
     auto responseArea = getAnalysisArea();
     
     auto w = responseArea.getWidth();
@@ -366,9 +347,11 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
         responseCurve.lineTo(responseArea.getX() + i, map(mags[i]));
     }
     
+    //Draw the render area outline
     g.setColour(backgroundOutlineColor);
     g.drawRoundedRectangle(getRenderArea().toFloat(), cornerSizeDisplay, lineThicknessDisplay);
  
+    //Draw the reponse curve
     g.setColour(responseCurveColor);
     g.strokePath(responseCurve, PathStrokeType(strokeThickness));
     
@@ -382,11 +365,11 @@ void ResponseCurveComponent::resized()
     Graphics g(background);
     
     //Colours
-    auto freqLineColour = Colours::white;
+    auto freqLineColour = Colours::whitesmoke;
     auto gainLineColour = Colours::lightslategrey;
     auto gain0dBLineColour = Colours::red;
-    auto freqLabelColour = Colours::black;
-    auto gainLabelColour = Colours::black;
+    auto freqLabelColour = Colours::dimgrey;
+    auto gainLabelColour = Colours::dimgrey;
     auto gain0dBLabelColour = Colours::red;
     
     //Labels text size
@@ -422,9 +405,6 @@ void ResponseCurveComponent::resized()
     
     for (auto x : xs)
     {
-//        auto normX = mapFromLog10(f, 20.f, 20000.f); //map the freqs in log10 base
-//        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
-//        Draw vertical lines of ONE pixel in log10 from the top(0.f) to the bottom(getHeight)
         g.drawVerticalLine(x, top, bottom);
     }
     
@@ -437,12 +417,9 @@ void ResponseCurveComponent::resized()
     for (auto gdB : gain)
     {
         auto y = jmap(gdB, -24.f, 24.f, float(bottom), float(top)); //Map the -24dB to the bottom and +24dB to the top
-//        g.drawHorizontalLine(y, 0.f, getWidth()); //Draw horizontal line from the left(0.f) to the right(getWidth)
         g.setColour(gdB == 0.f ? gain0dBLineColour : gainLineColour); //Set the horizontal line colours
         g.drawHorizontalLine(y, left, right);
     }
-    
-//    g.drawRect(getAnalysisArea());
     
     // === Draw analysis area labels === //
     
@@ -475,9 +452,7 @@ void ResponseCurveComponent::resized()
         r.setSize(textWidth, fontHeighFreqLabel);
         r.setCentre(x, 0);
         r.setY(1);
-        
         g.drawFittedText(str, r, Justification::centred, 1);
-        
     }
     
     //Gain label
@@ -486,9 +461,10 @@ void ResponseCurveComponent::resized()
     
     for (auto gdB : gain)
     {
+        //Draw the curve gain (right labels)
         auto y = jmap(gdB, -24.f, 24.f, float(bottom), float(top)); //Map the -24dB to the bottom and +24dB to the top
-        
         String str;
+        
         if (gdB > 0)
             str << "+";
         str << gdB;
@@ -497,11 +473,22 @@ void ResponseCurveComponent::resized()
         Rectangle<int> r;
         r.setSize(textWidth, fontHeighGainLabel);
         r.setX(getWidth() - textWidth);
-//        r.setX(getX()); // Uncomment to draw the gain labels to the left side
         r.setCentre(r.getCentreX(), y);
         
         g.setColour(gdB == 0.f ? gain0dBLabelColour : gainLabelColour); //Set the gain label colours
+        //The colour is different if the Gain is 0dB
         
+        g.drawFittedText(str, r, Justification::centred, 1);
+        
+        //Draw the analyser gain (left labels)
+        str.clear();
+        str << (gdB - 24.f); //From 0dB to -48dB
+        
+        r.setX(1); //gap between analysis area and text
+        textWidth = g.getCurrentFont().getStringWidth(str);
+        r.setSize(textWidth, fontHeighGainLabel);
+        
+        g.setColour(gainLabelColour);
         g.drawFittedText(str, r, Justification::centred, 1);
     }
     
