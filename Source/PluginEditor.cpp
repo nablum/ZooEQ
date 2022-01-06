@@ -385,6 +385,10 @@ void ResponseCurveComponent::resized()
     auto freqLineColour = Colours::white;
     auto gainLineColour = Colours::lightslategrey;
     auto gain0dBLineColour = Colours::red;
+    auto labelColour = Colours::black;
+    
+    //Labels text size
+    const int fontHeigh = 10;
     
     // === Draw curve component vertical lines (Freq) === //
     
@@ -392,9 +396,9 @@ void ResponseCurveComponent::resized()
     
     Array<float> freqs
     {
-        20,30,40,50,100,
-        200,300,400,500,1000,
-        2000,3000,4000,5000,10000,
+        20,/*30,40,*/50,100,
+        200,/*300,400,*/500,1000,
+        2000,/*3000,4000,*/5000,10000,
         20000
     };
     
@@ -438,7 +442,7 @@ void ResponseCurveComponent::resized()
 //    g.drawRect(getAnalysisArea());
     
     // === Draw analysis area labels === //
-    const int fontHeigh = 10;
+    g.setColour(labelColour);
     g.setFont(fontHeigh);
     
     for (int i = 0; i< freqs.size(); ++i)
