@@ -437,6 +437,39 @@ void ResponseCurveComponent::resized()
     
 //    g.drawRect(getAnalysisArea());
     
+    // === Draw analysis area labels === //
+    const int fontHeigh = 10;
+    g.setFont(fontHeigh);
+    
+    for (int i = 0; i< freqs.size(); ++i)
+    {
+        auto f = freqs[i];
+        auto x = xs[i];
+        
+        //Add kHz if necessary
+        bool addK = false;
+        String str;
+        if (f > 999.f)
+        {
+            addK = true;
+            f /= 1000.f;
+        }
+        str << f;
+        if (addK)
+            str << "k";
+        str << "Hz";
+        
+        //Build a rectangle around the label
+        auto textWidth = g.getCurrentFont().getStringWidth(str);
+        Rectangle<int> r;
+        r.setSize(textWidth, fontHeigh);
+        r.setCentre(x, 0);
+        r.setY(1);
+        
+        g.drawFittedText(str, r, Justification::centred, 1);
+        
+    }
+    
 }
 
 juce::Rectangle<int> ResponseCurveComponent::getRenderArea()
