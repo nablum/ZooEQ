@@ -114,6 +114,12 @@ void ZooEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     leftChannelFifo.prepare(samplesPerBlock);
     rightChannelFifo.prepare(samplesPerBlock);
     
+    osc.initialise([](float x) { return std::sin(x); } );
+    
+    spec.numChannels = getTotalNumOutputChannels();
+    osc.prepare(spec);
+    osc.setFrequency(5000);
+    
 }
 
 void ZooEQAudioProcessor::releaseResources()
@@ -168,6 +174,10 @@ void ZooEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     
     // === Apply FX on the audio === //
     juce::dsp::AudioBlock<float> block(buffer);
+    
+//    buffer.clear();
+//    juce::dsp::ProcessContextReplacing<float> stereoContext(block);
+//    osc.process(stereoContext);
     
     auto leftBlock = block.getSingleChannelBlock(0);
     auto rightBlock = block.getSingleChannelBlock(1);
