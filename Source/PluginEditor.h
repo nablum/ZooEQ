@@ -74,6 +74,8 @@ juce::Timer
     
     void paint(juce::Graphics& g) override;
     
+    void resized() override;
+    
 private:
     ZooEQAudioProcessor& audioProcessor;
     juce::Atomic<bool> parametersChanged { false };
@@ -81,6 +83,9 @@ private:
     MonoChain monoChain;
     
     void updateChain();
+    
+    juce::Image background;
+    
 };
 
 //==============================================================================

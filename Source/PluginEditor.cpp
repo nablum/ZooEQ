@@ -302,6 +302,9 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
     
     g.fillAll (backgroundColor); //Curve Background Color
     
+    g.drawImage(background, getLocalBounds().toFloat()); //Draw the freq&dB lines
+    //(for setup go to ResponseCurveComponent::paint resized())
+    
     auto responseArea = getLocalBounds();
     
     auto w = responseArea.getWidth();
@@ -367,6 +370,52 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
     g.setColour(responseCurveColor);
     g.strokePath(responseCurve, PathStrokeType(strokeThickness));
     
+    
+}
+
+void ResponseCurveComponent::resized()
+{
+    using namespace juce;
+    background = Image(Image::PixelFormat::RGB, getWidth(), getHeight(), true);
+    Graphics g(background);
+    
+    //Colours
+    auto freqLineColour = Colours::white;
+    auto gainLineColour = Colours::lightslategrey;
+    
+    // === Draw curve component vertical lines (Freq) === //
+    
+    g.setColour(freqLineColour); //Set colour of the vertical lines
+    
+    Array<float> freqs
+    {
+        20,30,40,50,100,
+        200,300,400,500,1000,
+        2000,3000,4000,5000,10000,
+        20000
+    };
+    
+    for (auto f : freqs)
+    {
+        auto normX = mapFromLog10(f, 20.f, 20000.f); //map the freqs in log10 base
+        g.drawVerticalLine(getWidth() * normX, 0.f, getHeight());
+        //Draw vertical lines of ONE pixel in log10 from the top(0.f) to the bottom(getHeight)
+    }
+    
+    // === Draw curve component horizontal lines (Gain) === //
+    
+    g.setColour(gainLineColour); //Set colour of the horizontal lines
+    
+    Array<float> gain
+    {
+        -24,-12,0,12,24
+    };
+    
+    for (auto gdB : gain)
+    {
+        auto normY = jmap(gdB, -24.f, 24.f, float(getHeight()), 0.f); //Map the -24dB to the bottom and +24dB to the top
+        g.drawHorizontalLine(normY, 0.f, getWidth()); //Draw horizontal line from the left(0.f) to the right(getWidth)
+    }
     
 }
 
