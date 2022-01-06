@@ -385,10 +385,13 @@ void ResponseCurveComponent::resized()
     auto freqLineColour = Colours::white;
     auto gainLineColour = Colours::lightslategrey;
     auto gain0dBLineColour = Colours::red;
-    auto labelColour = Colours::black;
+    auto freqLabelColour = Colours::black;
+    auto gainLabelColour = Colours::black;
+    auto gain0dBLabelColour = Colours::red;
     
     //Labels text size
-    const int fontHeigh = 10;
+    const int fontHeighFreqLabel = 10;
+    const int fontHeighGainLabel = 9;
     
     // === Draw curve component vertical lines (Freq) === //
     
@@ -442,8 +445,11 @@ void ResponseCurveComponent::resized()
 //    g.drawRect(getAnalysisArea());
     
     // === Draw analysis area labels === //
-    g.setColour(labelColour);
-    g.setFont(fontHeigh);
+    
+    //Frequency label
+    //Setup
+    g.setColour(freqLabelColour);
+    g.setFont(fontHeighFreqLabel);
     
     for (int i = 0; i< freqs.size(); ++i)
     {
@@ -466,12 +472,37 @@ void ResponseCurveComponent::resized()
         //Build a rectangle around the label
         auto textWidth = g.getCurrentFont().getStringWidth(str);
         Rectangle<int> r;
-        r.setSize(textWidth, fontHeigh);
+        r.setSize(textWidth, fontHeighFreqLabel);
         r.setCentre(x, 0);
         r.setY(1);
         
         g.drawFittedText(str, r, Justification::centred, 1);
         
+    }
+    
+    //Gain label
+    //Setup
+    g.setFont(fontHeighGainLabel);
+    
+    for (auto gdB : gain)
+    {
+        auto y = jmap(gdB, -24.f, 24.f, float(bottom), float(top)); //Map the -24dB to the bottom and +24dB to the top
+        
+        String str;
+        if (gdB > 0)
+            str << "+";
+        str << gdB;
+        
+        auto textWidth = g.getCurrentFont().getStringWidth(str);
+        Rectangle<int> r;
+        r.setSize(textWidth, fontHeighGainLabel);
+        r.setX(getWidth() - textWidth);
+//        r.setX(getX()); // Uncomment to draw the gain labels to the left side
+        r.setCentre(r.getCentreX(), y);
+        
+        g.setColour(gdB == 0.f ? gain0dBLabelColour : gainLabelColour); //Set the gain label colours
+        
+        g.drawFittedText(str, r, Justification::centred, 1);
     }
     
 }
