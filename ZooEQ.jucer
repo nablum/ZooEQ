@@ -2,7 +2,8 @@
 
 <JUCERPROJECT id="yBN8N3" name="ZooEQ" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
-              cppLanguageStandard="17">
+              cppLanguageStandard="17" bundleIdentifier="ZooInc" pluginManufacturer="ZooInc"
+              pluginVST3Category="EQ" companyName="ZooInc">
   <MAINGROUP id="zDfrVB" name="ZooEQ">
     <GROUP id="{603B3745-5326-72D2-0A6A-54A0B49B7350}" name="Source">
       <FILE id="qnJ4ac" name="PluginProcessor.cpp" compile="1" resource="0"
