@@ -77,6 +77,11 @@ void LookAndFeel::drawToggleButton(juce::Graphics &g,
     auto powerButtonColourOn = Colour(215u, 43u, 71u);
     auto powerButtonColourOff = Colours::dimgrey;
     
+    //Button Thickness
+    float thicknessLinePowerButton = 1.f;
+    float thicknessLineOutlinePowerButton = 1.5f;
+    float thicknessLineAnalyserEnableButton = 1.f;
+    
     //Check if the button to draw is a LowCut, Peak or HighCut Bypass button
     if (auto* pb = dynamic_cast<PowerButton*>(&toggleButton))
     {
@@ -104,14 +109,14 @@ void LookAndFeel::drawToggleButton(juce::Graphics &g,
         
         powerButton.startNewSubPath(r.getCentreX(), r.getY());
         powerButton.lineTo(r.getCentre());
-        PathStrokeType pst(2.f, PathStrokeType::JointStyle::curved);
+        PathStrokeType pst(thicknessLinePowerButton, PathStrokeType::JointStyle::curved);
         
         //Apply different colours depending on the on/off power button state
         auto powerButtonColor = toggleButton.getToggleState() ? powerButtonColourOff : powerButtonColourOn;
         
         g.setColour(powerButtonColor); //Set the colour
         g.strokePath(powerButton, pst); //Draw the power sign
-        g.drawEllipse(r, 2); //Draw a circle around the power sign
+        g.drawEllipse(r, thicknessLineOutlinePowerButton); //Draw a circle around the power sign
     }
     //Check if the button is a analyser enable button
     else if (auto* analyserButton = dynamic_cast<AnalyserButton*>(&toggleButton))
@@ -122,7 +127,7 @@ void LookAndFeel::drawToggleButton(juce::Graphics &g,
         auto bounds = toggleButton.getLocalBounds();
         g.drawRect(bounds);
         
-        g.strokePath(analyserButton->randomPath, PathStrokeType(1.f));
+        g.strokePath(analyserButton->randomPath, PathStrokeType(thicknessLineAnalyserEnableButton));
     }
 }
 
@@ -740,6 +745,19 @@ analyserEnableButtonAttachment(audioProcessor.apvts, "Analyser Enable", analyser
     peakBypassButton.setLookAndFeel(&lnf);
     highcutBypassButton.setLookAndFeel(&lnf);
     analyserEnableButton.setLookAndFeel(&lnf);
+    
+    auto safePtr = juce::Component::SafePointer<ZooEQAudioProcessorEditor>(this);
+    peakBypassButton.onClick = [safePtr]()
+    {
+        if (auto* comp = safePtr.getComponent())
+        {
+            auto bypassed = comp->peakBypassButton.getToggleState();
+            comp->peakFreqSlider.setEnabled(!bypassed);
+            comp->peakGainSlider.setEnabled(!bypassed);
+            comp->peakQualitySlider.setEnabled(!bypassed);
+            
+        }
+    };
     
     setSize (600, 400);
 }
