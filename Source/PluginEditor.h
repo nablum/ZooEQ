@@ -162,10 +162,9 @@ struct LookAndFeel : juce::LookAndFeel_V4
                            juce::ToggleButton &toggleButton,
                            bool shouldDrawButtonAsHighlighted,
                            bool shouldDrawButtonAsDown) override;
-    
 };
 
-//Custor rotary slider
+//Custom rotary slider
 struct RotarySliderWithLabels : juce::Slider
 {
     RotarySliderWithLabels(juce::RangedAudioParameter& rap, const juce::String& unitSuffix) :
@@ -188,7 +187,6 @@ struct RotarySliderWithLabels : juce::Slider
     };
     
     juce::Array<LabelPos> labels;
-    
     void paint(juce::Graphics& g) override;
     juce::Rectangle<int> getSliderBounds() const;
     int getTextHeight() const {return 14;}
@@ -196,11 +194,8 @@ struct RotarySliderWithLabels : juce::Slider
     
 private:
     LookAndFeel lnf;
-    
     juce::RangedAudioParameter* param;
     juce::String suffix;
-    
-    
 };
 
 struct PathProducer
@@ -222,7 +217,7 @@ private:
     FFTDataGenerator<std::vector<float>> leftChannelFFTDataGenerator;
     
     AnalyserPathGenerator<juce::Path> pathProducer;
-    
+
     juce::Path leftChannelFFTPath;
 };
 
@@ -286,9 +281,7 @@ struct AnalyserButton : juce::ToggleButton
         {
             randomPath.lineTo(x, insetRect.getY()+ insetRect.getHeight() * r.nextFloat());
         }
-        
     }
-    
     juce::Path randomPath;
 };
 
@@ -329,6 +322,7 @@ private:
     
     PowerButton lowcutBypassButton, peakBypassButton, highcutBypassButton;
     AnalyserButton analyserEnableButton;
+    
     
     using ButtonAttachment = APVTS::ButtonAttachment;
     ButtonAttachment    lowcutBypassButtonAttachment,

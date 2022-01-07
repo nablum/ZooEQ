@@ -175,10 +175,6 @@ void ZooEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     // === Apply FX on the audio === //
     juce::dsp::AudioBlock<float> block(buffer);
     
-//    buffer.clear();
-//    juce::dsp::ProcessContextReplacing<float> stereoContext(block);
-//    osc.process(stereoContext);
-    
     auto leftBlock = block.getSingleChannelBlock(0);
     auto rightBlock = block.getSingleChannelBlock(1);
     

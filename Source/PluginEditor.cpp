@@ -64,7 +64,6 @@ void LookAndFeel::drawRotarySlider(juce::Graphics & g,
         r.setLeft(center.getX() - 2);
         r.setRight(center.getX() + 2);
         r.setTop(bounds.getY());
-        //r.setBottom(center.getY() - rswl->getTextHeight() * 1.5); //With Slider Value in the middle
         r.setBottom(center.getY());
         p.addRoundedRectangle(r, 2.f);
         
@@ -150,12 +149,6 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
     auto range = getRange();
     auto sliderBounds = getSliderBounds();
     
-    //Rotary Slider areas debug
-//    g.setColour(Colours::red);
-//    g.drawRect(getLocalBounds());
-//    g.setColour(Colours::yellow);
-//    g.drawRect(sliderBounds);
-    
     // === Slider Value === //
     //Colors
     auto backgroundTextColor = Colours::transparentWhite;
@@ -213,11 +206,9 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
         jassert(pos <= 1.f);
         
         float rad = 26.f; //JUCE_LIVE_CONSTANT(18.f);
-        
-        auto ang = jmap(pos, 0.f, 1.f, startAng + degreesToRadians(rad), endAng - degreesToRadians(rad));
-        
         float mod = 1.f; //JUCE_LIVE_CONSTANT(1.f);
         
+        auto ang = jmap(pos, 0.f, 1.f, startAng + degreesToRadians(rad), endAng - degreesToRadians(rad));
         auto c = center.getPointOnCircumference(radius + getTextHeight() * mod + 1, ang);
         //Get away from the center of the slider at the right angle
         
@@ -231,7 +222,6 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
         
         g.drawFittedText(str, r.toNearestInt(), juce::Justification::centred, 1);
     }
-    
 }
 
 juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const
@@ -274,24 +264,19 @@ juce::String RotarySliderWithLabels::getDisplayString() const
     {
         jassertfalse;  //This shouldn't happen!
     }
-    
     //Add kHz if necessary
     if (suffix.isNotEmpty())
     {
         str << " ";
         if(addK)
             str << "k";
-        
         str << suffix;
     }
-    
     return str;
-    
 }
 //==============================================================================
 ResponseCurveComponent::ResponseCurveComponent(ZooEQAudioProcessor& p) :
 audioProcessor(p),
-//leftChannelFifo(&audioProcessor.leftChannelFifo)
 leftPathProducer(audioProcessor.leftChannelFifo),
 rightPathProducer(audioProcessor.rightChannelFifo)
 {
@@ -300,11 +285,7 @@ rightPathProducer(audioProcessor.rightChannelFifo)
     {
         params->addListener(this);
     }
-    
-    
-    
     updateChain();
-    
     startTimerHz(60);
 }
 
@@ -343,7 +324,6 @@ void PathProducer::process(juce::Rectangle<float> fftBounds, double sampleRate)
             leftChannelFFTDataGenerator.produceFFTDataForRendering(monoBuffer, -48.f);
         }
     }
-    
     /**
      if there are FFT data buffers to pull
         if we can pull a buffer
@@ -388,14 +368,9 @@ void ResponseCurveComponent::timerCallback()
     
     if ( parametersChanged.compareAndSetBool(false, true) )
     {
-        //DBG("params changed");
         updateChain();
-        //signal a repaint
-//        repaint();
     }
-    
     repaint();
-    
 }
 
 void ResponseCurveComponent::updateChain()
@@ -440,7 +415,8 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
     g.setColour(backgroundColor);
     g.fillRect(getRenderArea());
     
-    g.drawImage(background, getLocalBounds().toFloat()); //Draw the freq&dB lines
+    //Draw the freq&dB lines
+    g.drawImage(background, getLocalBounds().toFloat());
     //(for setup go to ResponseCurveComponent::paint resized())
     
     auto responseArea = getAnalysisArea();
@@ -490,14 +466,13 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
             if( !highcut.isBypassed<3>() )
                 mag *= highcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
         }
-        
         mags[i] = Decibels::gainToDecibels(mag);
     }
     
     Path responseCurve;
-    
     const double outputMin = responseArea.getBottom();
     const double outputMax = responseArea.getY();
+    
     auto map = [outputMin,outputMax](double input)
     {
         return jmap(input, -24.0, 24.0, outputMin, outputMax);
@@ -579,7 +554,6 @@ void ResponseCurveComponent::resized()
     {
         auto normX = mapFromLog10(f, 20.f, 20000.f); //map the freqs in log10 base
         xs.add(left + width * normX);
-        
     }
     
     for (auto x : xs)
@@ -601,7 +575,6 @@ void ResponseCurveComponent::resized()
     }
     
     // === Draw analysis area labels === //
-    
     //Frequency label
     //Setup
     g.setColour(freqLabelColour);
@@ -634,7 +607,7 @@ void ResponseCurveComponent::resized()
         g.drawFittedText(str, r, Justification::centred, 1);
     }
     
-    //Gain label
+    // === Draw gain label === //
     //Setup
     g.setFont(fontHeighGainLabel);
     
@@ -676,17 +649,10 @@ void ResponseCurveComponent::resized()
 juce::Rectangle<int> ResponseCurveComponent::getRenderArea()
 {
     auto bounds = getLocalBounds();
-    
-//    bounds.reduce(10, //JUCE_LIVE_CONSTANT(5),
-//                  8 //JUCE_LIVE_CONSTANT(5)
-//                  );
-
-    //Resized the curve reponse component
     bounds.removeFromTop(12);
     bounds.removeFromBottom(2);
     bounds.removeFromLeft(20);
     bounds.removeFromRight(20);
-    
     return bounds;
     
 }
@@ -694,12 +660,10 @@ juce::Rectangle<int> ResponseCurveComponent::getRenderArea()
 juce::Rectangle<int> ResponseCurveComponent::getAnalysisArea()
 {
     auto bounds = getRenderArea();
-    
     //Define the Analysis Area (where the Freq/Gain values are display
     //Make a gape to avoid colision between text and response curve bounds
     bounds.removeFromTop(4);
     bounds.removeFromBottom(4);
-    
     return bounds;
 }
 
@@ -809,7 +773,7 @@ analyserEnableButtonAttachment(audioProcessor.apvts, "Analyser Enable", analyser
         }
     };
     
-    setSize (600, 400);
+    setSize (600, 400); //Size of the window
 }
 
 ZooEQAudioProcessorEditor::~ZooEQAudioProcessorEditor()
@@ -832,14 +796,10 @@ void ZooEQAudioProcessorEditor::paint (juce::Graphics& g)
     
     g.setGradientFill(backgroundColorGradient);
     g.fillAll();
-    
 }
 
 void ZooEQAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
-    
     //=== Organisation of the display : Placement of the elements === //
     
     auto bounds = getLocalBounds();
