@@ -202,9 +202,13 @@ void RotarySliderWithLabels::paint(juce::Graphics &g)
         jassert(0.f <= pos);
         jassert(pos <= 1.f);
         
-        auto ang = jmap(pos, 0.f, 1.f, startAng + degreesToRadians(18.f), endAng - degreesToRadians(18.f));
+        float rad = 26.f; //JUCE_LIVE_CONSTANT(18.f);
         
-        auto c = center.getPointOnCircumference(radius + getTextHeight() * 1.0f + 1, ang);
+        auto ang = jmap(pos, 0.f, 1.f, startAng + degreesToRadians(rad), endAng - degreesToRadians(rad));
+        
+        float mod = 1.f; //JUCE_LIVE_CONSTANT(1.f);
+        
+        auto c = center.getPointOnCircumference(radius + getTextHeight() * mod + 1, ang);
         //Get away from the center of the slider at the right angle
         
         Rectangle<float> r;
