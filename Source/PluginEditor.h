@@ -157,6 +157,12 @@ struct LookAndFeel : juce::LookAndFeel_V4
                            float rotaryStartAngle,
                            float rotaryEndAngle,
                            juce::Slider&) override;
+    
+    void drawToggleButton (juce::Graphics &g,
+                           juce::ToggleButton &toggleButton,
+                           bool shouldDrawButtonAsHighlighted,
+                           bool shouldDrawButtonAsDown) override;
+    
 };
 
 //Custor rotary slider
@@ -301,6 +307,8 @@ private:
                         analyserEnableButtonAttachment;
     
     std::vector<juce::Component*> getComps();
+    
+    LookAndFeel lnf;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ZooEQAudioProcessorEditor)
 };

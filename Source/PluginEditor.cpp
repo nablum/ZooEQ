@@ -63,10 +63,55 @@ void LookAndFeel::drawRotarySlider(juce::Graphics & g,
         auto sliderAngRad = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle);  //Normalized angle values
         p.applyTransform(AffineTransform().rotation(sliderAngRad, center.getX(), center.getY())); //Rotation transformation
         g.fillPath(p); //Fill the graphics
-        
     }
+}
+
+void LookAndFeel::drawToggleButton(juce::Graphics &g,
+                                   juce::ToggleButton &toggleButton,
+                                   bool shouldDrawButtonAsHighlighted,
+                                   bool shouldDrawButtonAsDown)
+{
+    using namespace juce;
+    Path powerButton;
+    
+    //Coulours
+    auto powerButtonColourOn = Colour(215u, 43u, 71u);
+    auto powerButtonColourOff = Colours::dimgrey;
+    
+    //Set the position of the bypass button
+    auto bounds = toggleButton.getLocalBounds();
+    auto size = jmin(bounds.getWidth(), bounds.getHeight()) - 5 /*JUCE_LIVE_CONSTANT(6)*/;
+    auto r = bounds.withSizeKeepingCentre(size, size).toFloat(); //Put the button in the middle of the slider area
+    
+    //Set the power button on the left side of the toggle button area
+    r.setBounds(bounds.getX() + 36, bounds.getY() + 4 /*JUCE_LIVE_CONSTANT(10)*/, size, size);
+    
+    //Desing the power button
+    float ang = 33.f; //JUCE_LIVE_CONSTANT(30);
+    size -= 8; //JUCE_LIVE_CONSTANT(6);
+    
+    powerButton.addCentredArc(r.getCentreX(),
+                              r.getCentreY(),
+                              size * 0.5,
+                              size * 0.5, 0.f,
+                              degreesToRadians(ang),
+                              degreesToRadians(360.f -ang),
+                              true);
+    
+    powerButton.startNewSubPath(r.getCentreX(), r.getY());
+    powerButton.lineTo(r.getCentre());
+    PathStrokeType pst(2.f, PathStrokeType::JointStyle::curved);
+    
+    //Apply different colours depending on the on/off power button state
+    auto powerButtoColour = toggleButton.getToggleState() ? powerButtonColourOff : powerButtonColourOn;
+    
+    g.setColour(powerButtoColour); //Set the colour
+    g.strokePath(powerButton, pst); //Draw the power sign
+    g.drawEllipse(r, 2); //Draw a circle around the power sign
+    
     
 }
+
 //==============================================================================
 void RotarySliderWithLabels::paint(juce::Graphics &g)
 {
@@ -677,12 +722,18 @@ analyserEnableButtonAttachment(audioProcessor.apvts, "Analyser Enable", analyser
         addAndMakeVisible(comp);
     }
     
+    lowcutBypassButton.setLookAndFeel(&lnf);
+    peakBypassButton.setLookAndFeel(&lnf);
+    highcutBypassButton.setLookAndFeel(&lnf);
+    
     setSize (600, 400);
 }
 
 ZooEQAudioProcessorEditor::~ZooEQAudioProcessorEditor()
 {
-
+    lowcutBypassButton.setLookAndFeel(nullptr);
+    peakBypassButton.setLookAndFeel(nullptr);
+    highcutBypassButton.setLookAndFeel(nullptr);
 }
 
 //==============================================================================
