@@ -321,6 +321,10 @@ void ResponseCurveComponent::updateChain()
     //update the monochain
     auto chainSettings = getChainSettings(audioProcessor.apvts);
     
+    monoChain.setBypassed<ChainPositions::LowCut>(chainSettings.lowCutBypassed);
+    monoChain.setBypassed<ChainPositions::Peak>(chainSettings.peakBypassed);
+    monoChain.setBypassed<ChainPositions::HighCut>(chainSettings.highCutBypassed);
+    
     //Apply PeakCut Filter changes on the white line
     auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
     updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
@@ -374,28 +378,36 @@ void ResponseCurveComponent::paint (juce::Graphics& g)
     {
         double mag = 1.f;
         auto freq = mapToLog10((double(i)/double(w)), 20.0, 20000.0);
+        
+        //Peak
         if(! monoChain.isBypassed<ChainPositions::Peak>())
             mag *= peak.coefficients->getMagnitudeForFrequency(freq, sampleRate);
         
         //Low Cut
-        if( !lowcut.isBypassed<0>() )
-            mag *= lowcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if( !lowcut.isBypassed<1>() )
-            mag *= lowcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if( !lowcut.isBypassed<2>() )
-            mag *= lowcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if( !lowcut.isBypassed<3>() )
-            mag *= lowcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (! monoChain.isBypassed<ChainPositions::LowCut>() )
+        {
+            if( !lowcut.isBypassed<0>() )
+                mag *= lowcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if( !lowcut.isBypassed<1>() )
+                mag *= lowcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if( !lowcut.isBypassed<2>() )
+                mag *= lowcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if( !lowcut.isBypassed<3>() )
+                mag *= lowcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        }
         
         //High Cut
-        if( !highcut.isBypassed<0>() )
-            mag *= highcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if( !highcut.isBypassed<1>() )
-            mag *= highcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if( !highcut.isBypassed<2>() )
-            mag *= highcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if( !highcut.isBypassed<3>() )
-            mag *= highcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        if (! monoChain.isBypassed<ChainPositions::HighCut>() )
+        {
+            if( !highcut.isBypassed<0>() )
+                mag *= highcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if( !highcut.isBypassed<1>() )
+                mag *= highcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if( !highcut.isBypassed<2>() )
+                mag *= highcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if( !highcut.isBypassed<3>() )
+                mag *= highcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        }
         
         mags[i] = Decibels::gainToDecibels(mag);
     }
