@@ -22,28 +22,38 @@ void LookAndFeel::drawRotarySlider(juce::Graphics & g,
     using namespace juce;
     
     auto bounds = Rectangle<float>(x, y, width, height);
+    auto enabled = slider.isEnabled();
     
     //Color Set up
-    auto outlineRotarySliderColor = Colour(43u, 36u, 48u);
-    auto rotarySliderColorGradient1 = Colours::lightslategrey;
-    auto rotarySliderColorGradient2 = Colours::slategrey;
-    auto sliderColor = Colours::lightgoldenrodyellow;
+        //Slider ON colours
+    auto outlineRotarySliderColorON = Colour(43u, 36u, 48u);
+    auto rotarySliderColorGradient1ON = Colours::lightslategrey;
+    auto rotarySliderColorGradient2ON = Colours::slategrey;
+    auto sliderColorON = Colours::lightgoldenrodyellow;
+    auto rotarySliderColorGradientON = ColourGradient().vertical(rotarySliderColorGradient1ON,
+                                                               rotarySliderColorGradient2ON, bounds);
+        //Slider OFF Colours
+    auto outlineRotarySliderColorOFF = Colour(43u, 36u, 48u);
+    auto rotarySliderColorGradient1OFF = Colours::dimgrey;
+    auto rotarySliderColorGradient2OFF = Colours::darkgrey;
+    auto sliderColorOFF = Colours::lightgrey;
+    auto rotarySliderColorGradientOFF = ColourGradient().vertical(rotarySliderColorGradient1OFF,
+                                                               rotarySliderColorGradient2OFF, bounds);
     
     // === Rotary Slider === //
     
     //Fill
-    auto rotarySliderColorGradient = ColourGradient().vertical(rotarySliderColorGradient1, rotarySliderColorGradient2, bounds);
-    g.setGradientFill(rotarySliderColorGradient);
+    g.setGradientFill(enabled ? rotarySliderColorGradientON : rotarySliderColorGradientOFF);
     g.fillEllipse(bounds);
     
     //Draw
-    g.setColour(outlineRotarySliderColor); //Color around the rotary slider
+    g.setColour(enabled ? outlineRotarySliderColorON : outlineRotarySliderColorOFF); //Color around the rotary slider
     g.drawEllipse(bounds, 1.5f);
     
     if ( auto* rswl = dynamic_cast<RotarySliderWithLabels*>(&slider) )
     {
         // === Slider === //
-        g.setColour(sliderColor); //Set the color
+        g.setColour(enabled ? sliderColorON : sliderColorOFF); //Set the color
         
         //Set up
         auto center = bounds.getCentre();
